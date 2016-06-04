@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.IO;
+using System.Diagnostics;
 
 namespace NVorbis.Ogg
 {
@@ -64,10 +65,14 @@ namespace NVorbis.Ogg
             if (packet.IsContinuation)
             {
                 // if we get here, the stream is invalid if there isn't a previous packet
-                if (_last == null) throw new InvalidDataException();
+				if (_last == null) throw new InvalidDataException("Stream is invalid, there is no previous packet");
 
-                // if the last packet isn't continued, something is wrong
-                if (!_last.IsContinued) throw new InvalidDataException();
+				//This check used to throw an exception, however saw an ogg file which loaded fine when ignoring the exception
+				//so just logging the error instead. 
+				//The original comment:
+                //'if the last packet isn't continued, something is wrong'
+				if (!_last.IsContinued) 
+					Debug.WriteLine("OggPacketReader: Reached a continuation packet which has a previous packet which is not continued, ignoring and hoping for the best.");
 
                 _last.MergeWith(packet);
                 _last.IsContinued = packet.IsContinued;
